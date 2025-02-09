@@ -16,8 +16,8 @@ print_message() {
 }
 
 # Check if .env file exists
-if [ ! -f .env ]; then
-    print_message "❌ .env file not found! Please create one from .env.example" "$RED"
+if [ ! -f backend/.env ]; then
+    print_message "❌ backend/.env file not found! Please create one from backend/.env.example" "$RED"
     exit 1
 fi
 
