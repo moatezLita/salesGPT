@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: salesgpt-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - mongodb
+    networks:
+      - salesgpt-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mongodb:
+    image: mongo:latest
+    container_name: salesgpt-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - salesgpt-network
+    restart: unless-stopped
+
+networks:
+  salesgpt-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
