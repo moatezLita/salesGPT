@@ -72,6 +72,44 @@ async def analyze_website(request: WebsiteAnalysisRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/v1/analyses")
+async def list_analyses():
+    try:
+        analyses = await db.list_analyses()
+        return {
+            "status": "success",
+            "analyses": analyses
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/analyses/{analysis_id}")
+async def get_analysis_by_id(analysis_id: str):
+    try:
+        analysis = await db.get_analysis(analysis_id)
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        return {
+            "status": "success",
+            "analysis": analysis
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@app.get("/api/v1/emails/{analysis_id}")
+async def list_emails(analysis_id: str):
+    try:
+        emails = await db.get_emails(analysis_id)
+        return {
+            "status": "success",
+            "emails": emails
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/v1/generate-email/{analysis_id}")
 async def generate_email(analysis_id: str, request: EmailGenerationRequest):
     try:
@@ -100,41 +138,3 @@ async def generate_email(analysis_id: str, request: EmailGenerationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/v1/analyses")
-async def list_analyses():
-    try:
-        analyses = await db.list_analyses()
-        return {
-            "status": "success",
-            "analyses": analyses
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/v1/emails/{analysis_id}")
-async def list_emails(analysis_id: str):
-    try:
-        emails = await db.get_emails(analysis_id)
-        return {
-            "status": "success",
-            "emails": emails
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/v1/analyses/{analysis_id}")
-async def get_analysis_by_id(analysis_id: str):
-    try:
-        analysis = await db.get_analysis(analysis_id)
-        if not analysis:
-            raise HTTPException(
-                status_code=404, 
-                detail=f"Analysis with ID {analysis_id} not found"
-            )
-        
-        return {
-            "status": "success",
-            "analysis": analysis
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
