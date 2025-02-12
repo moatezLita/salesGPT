@@ -1,0 +1,18 @@
+// Color Palette:
+// Primary: Indigo/Purple
+// - Light: #818cf8 (indigo-400)
+// - Primary: #6366f1 (indigo-500)
+// - Dark: #4f46e5 (indigo-600)
+// 
+// Background:
+// - Light: #ffffff
+// - Dark: #111827 (gray-900)
+// 
+// Text:
+// - Light: #1f2937 (gray-800)
+// - Dark: #f3f4f6 (gray-100)
+//
+// Accent:
+// - Success: #10b981 (emerald-500)
+// - Error: #ef4444 (red-500)
+// - Warning: #f59e0b (amber-500)
