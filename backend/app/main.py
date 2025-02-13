@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict
 from datetime import datetime
+import logging
+
 
 from .config import get_settings
 from .services.scraper import WebScraper
@@ -32,11 +34,12 @@ scraper = WebScraper()
 analyzer = CompanyAnalyzer()
 email_generator = EmailGenerator()
 db = DatabaseHandler(settings.MONGODB_URL)
+logger = logging.getLogger(__name__)
 
 # Request Models
-class WebsiteAnalysisRequest(BaseModel):
-    url: str
-    custom_notes: Optional[str] = None
+class WebsiteAnalysisError(Exception):
+    """Base exception for website analysis errors"""
+    pass
 
 class EmailGenerationRequest(BaseModel):
     target_persona: Optional[str] = "Decision Maker"
@@ -55,13 +58,25 @@ async def health_check():
 async def analyze_website(request: WebsiteAnalysisRequest):
     try:
         # Scrape website
-        website_data = await scraper.scrape_website(request.url)
+        try:
+            website_data = await scraper.scrape_website(request.url)
+        except Exception as e:
+            logger.error(f"Scraping failed for URL {request.url}: {str(e)}")
+            raise WebsiteAnalysisError(f"Failed to scrape website: {str(e)}")
         
         # Analyze company
-        analysis = analyzer.analyze_company(website_data, request.custom_notes)
+        try:
+            analysis = analyzer.analyze_company(website_data, request.custom_notes)
+        except Exception as e:
+            logger.error(f"Analysis failed for URL {request.url}: {str(e)}")
+            raise WebsiteAnalysisError(f"Failed to analyze company data: {str(e)}")
         
         # Save to database
-        analysis_id = await db.save_analysis(request.url, website_data, analysis)
+        try:
+            analysis_id = await db.save_analysis(request.url, website_data, analysis)
+        except Exception as e:
+            logger.error(f"Database save failed for URL {request.url}: {str(e)}")
+            raise WebsiteAnalysisError(f"Failed to save analysis: {str(e)}")
         
         return {
             "status": "success",
@@ -69,8 +84,12 @@ async def analyze_website(request: WebsiteAnalysisRequest):
             "website_data": website_data,
             "analysis": analysis
         }
+    except WebsiteAnalysisError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Unexpected error during website analysis: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error occurred")
+
 
 @app.get("/api/v1/analyses")
 async def list_analyses():
