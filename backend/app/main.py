@@ -5,12 +5,13 @@ from typing import Optional, Dict
 from datetime import datetime
 import logging
 
-
 from .config import get_settings
 from .services.scraper import WebScraper
 from .services.analyzer import CompanyAnalyzer
 from .services.email_generator import EmailGenerator
 from .services.database import DatabaseHandler
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
@@ -34,16 +35,20 @@ scraper = WebScraper()
 analyzer = CompanyAnalyzer()
 email_generator = EmailGenerator()
 db = DatabaseHandler(settings.MONGODB_URL)
-logger = logging.getLogger(__name__)
 
 # Request Models
-class WebsiteAnalysisError(Exception):
-    """Base exception for website analysis errors"""
-    pass
+class WebsiteAnalysisRequest(BaseModel):
+    url: str
+    custom_notes: Optional[str] = None
 
 class EmailGenerationRequest(BaseModel):
     target_persona: Optional[str] = "Decision Maker"
     tone: Optional[str] = "professional"
+
+# Custom Exception
+class WebsiteAnalysisError(Exception):
+    """Base exception for website analysis errors"""
+    pass
 
 # API Endpoints
 @app.get("/health")
