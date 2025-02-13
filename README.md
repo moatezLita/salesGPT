@@ -138,9 +138,9 @@ For security concerns, please email moatez.litaiem@yalors.tn .
 
 ## 📧 Contact
 
-Your Name - [@Moatez Litaiem](https://www.linkedin.com/in/litaiem-moatez/)
+[@Moatez Litaiem](https://www.linkedin.com/in/litaiem-moatez/)
 
-Project Link: [https://github.com/maotezLita/salesgpt](https://github.com/moatezLita/salesgpt)
+[https://github.com/maotezLita/salesgpt](https://github.com/moatezLita/salesgpt)
 
 ## 🙏 Acknowledgments
 
