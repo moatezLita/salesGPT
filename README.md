@@ -32,7 +32,8 @@ For Docker deployment:
 
 For local development:
 - Python 3.8+
-- Node.js 16+
+- Node.js 18+
+- NextJs 14.2+
 - Docker and Docker Compose
 - Groq API key
 
@@ -94,7 +95,7 @@ uvicorn main:app --port 8001
 # Frontend
 cd frontend
 npm install
-npm start
+npm run dev
 ```
 
 ## 🛠️ Development
