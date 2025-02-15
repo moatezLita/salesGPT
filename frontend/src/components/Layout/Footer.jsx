@@ -16,7 +16,7 @@ export function Footer() {
           </div>
           <div className="mt-8 pt-8 border-t border-gray-200">
             <p className="text-gray-600 text-center">
-              © 2024 SalesGPT. All rights reserved.
+              © 2025 SalesGPT. All rights reserved.
             </p>
           </div>
         </div>
