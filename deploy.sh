@@ -15,9 +15,15 @@ print_message() {
     echo -e "${2}${1}${NC}"
 }
 
-# Check if .env file exists
+# Check if necessary files exist
 if [ ! -f backend/.env ]; then
     print_message "❌ backend/.env file not found! Please create one from backend/.env.example" "$RED"
+    exit 1
+fi
+
+# Check if frontend package.json exists
+if [ ! -f frontend/package.json ]; then
+    print_message "❌ frontend/package.json not found! Please ensure the frontend directory is set up correctly" "$RED"
     exit 1
 fi
 
@@ -49,6 +55,7 @@ docker-compose up -d --build
 if [ $? -eq 0 ]; then
     print_message "✅ Deployment successful!" "$GREEN"
     print_message "📋 Services:" "$GREEN"
+    echo "- Frontend: http://localhost:3000"
     echo "- API: http://localhost:8000"
     echo "- API Docs: http://localhost:8000/docs"
     echo "- MongoDB: mongodb://localhost:27017"
