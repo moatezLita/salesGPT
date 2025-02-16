@@ -42,8 +42,9 @@ class WebsiteAnalysisRequest(BaseModel):
     custom_notes: Optional[str] = None
 
 class EmailGenerationRequest(BaseModel):
-    target_persona: Optional[str] = "Decision Maker"
-    tone: Optional[str] = "professional"
+    target_persona: str = "Decision Maker"
+    tone: str = "professional"
+    service_description: Optional[str] = None
 
 # Custom Exception
 class WebsiteAnalysisError(Exception):
@@ -127,11 +128,14 @@ async def get_analysis_by_id(analysis_id: str):
 async def list_emails(analysis_id: str):
     try:
         emails = await db.get_emails(analysis_id)
+        if not emails:
+            raise HTTPException(status_code=404, detail="Emails not found")
         return {
             "status": "success",
             "emails": emails
         }
     except Exception as e:
+        logger.error(f"Error fetching emails: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/v1/generate-email/{analysis_id}")
@@ -144,9 +148,10 @@ async def generate_email(analysis_id: str, request: EmailGenerationRequest):
         
         # Generate emails
         emails = email_generator.generate_email(
-            analysis["analysis"],
-            request.target_persona,
-            request.tone
+            analysis=analysis["analysis"],
+            service_description=request.service_description,
+            target_persona=request.target_persona,
+            tone=request.tone
         )
         
         # Save emails to database
@@ -160,5 +165,6 @@ async def generate_email(analysis_id: str, request: EmailGenerationRequest):
     except HTTPException as e:
         raise e
     except Exception as e:
+        logger.error(f"Error generating email: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
