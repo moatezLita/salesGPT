@@ -41,10 +41,15 @@ class WebsiteAnalysisRequest(BaseModel):
     url: str
     custom_notes: Optional[str] = None
 
+class BusinessInfo(BaseModel):
+    company_name: str
+    business_type: str
+    product_description: str
+
 class EmailGenerationRequest(BaseModel):
-    target_persona: str = "Decision Maker"
-    tone: str = "professional"
-    service_description: Optional[str] = None
+    business_info: BusinessInfo
+    target_persona: Optional[str] = "decision maker"
+    tone: Optional[str] = "professional"
 
 # Custom Exception
 class WebsiteAnalysisError(Exception):
@@ -151,14 +156,24 @@ async def generate_email(analysis_id: str, request: EmailGenerationRequest):
         
         # Generate emails
         emails = email_generator.generate_email(
-            analysis=analysis["analysis"],
-            service_description=request.service_description,
+            company_analysis=analysis["analysis"],
+            user_business={
+                "company_name": request.business_info.company_name,
+                "business_type": request.business_info.business_type,
+                "product_description": request.business_info.product_description
+            },
             target_persona=request.target_persona,
             tone=request.tone
         )
         
-        # Save emails to database
-        email_id = await db.save_email(analysis_id, emails)
+        # Save emails to database with business info
+        email_data = {
+            "emails": emails,
+            "business_info": request.business_info.dict(),
+            "target_persona": request.target_persona,
+            "tone": request.tone
+        }
+        email_id = await db.save_email(analysis_id, email_data)
         
         return {
             "status": "success",
@@ -170,4 +185,3 @@ async def generate_email(analysis_id: str, request: EmailGenerationRequest):
     except Exception as e:
         logger.error(f"Error generating email: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-

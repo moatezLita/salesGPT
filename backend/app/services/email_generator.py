@@ -1,5 +1,3 @@
-# backend/app/services/email_generator.py
-
 from typing import Dict, List, Optional
 from fastapi import HTTPException
 import json
@@ -11,35 +9,51 @@ class EmailGenerator:
         self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
     def generate_email(
-        self, 
-        analysis: Dict, 
-        service_description: str,
-        target_persona: str, 
-        tone: str
+        self,
+        company_analysis: Dict,
+        user_business: Dict,
+        tone: str = "professional",
+        target_persona: str = "decision maker"
     ) -> Dict:
+        """
+        Generate personalized sales emails based on analyzed company and user's business.
+        
+        Args:
+            company_analysis (Dict): Analysis of the target company
+            user_business (Dict): Details of the user's business {
+                "company_name": str,
+                "business_type": str,
+                "product_description": str
+            }
+            tone (str): Desired email tone
+            target_persona (str): Target recipient role
+        """
         try:
-            # Analyze service fit with target company
-            service_analysis = self._analyze_service_fit(analysis, service_description)
+            # Generate opportunity analysis
+            opportunity = self._analyze_business_opportunity(
+                company_analysis,
+                user_business
+            )
             
             # Generate email content
             prompt = self._create_email_prompt(
-                analysis, 
-                service_description,
-                service_analysis,
-                target_persona, 
-                tone
+                company_analysis,
+                user_business,
+                opportunity,
+                tone,
+                target_persona
             )
             
             response = self.client.chat.completions.create(
                 model="mixtral-8x7b-32768",
                 messages=[{
                     "role": "system",
-                    "content": "You are an expert sales copywriter specializing in cold email outreach."
+                    "content": "You are an expert sales copywriter specializing in B2B email outreach."
                 }, {
                     "role": "user",
                     "content": prompt
                 }],
-                temperature=0.8,
+                temperature=0.7,
                 max_tokens=1000
             )
             
@@ -48,27 +62,41 @@ class EmailGenerator:
             
         except Exception as e:
             raise HTTPException(
-                status_code=500, 
+                status_code=500,
                 detail=f"Email generation failed: {str(e)}"
             )
 
-    def _analyze_service_fit(self, analysis: Dict, service_description: str) -> Dict:
+    def _analyze_business_opportunity(
+        self,
+        company_analysis: Dict,
+        user_business: Dict
+    ) -> Dict:
+        """Analyze how the user's business can benefit the target company."""
+        
         prompt = f"""
-        Analyze how this service fits the target company's needs:
+        Analyze how {user_business['company_name']} ({user_business['business_type']}) 
+        can provide value to the target company.
 
-        Company Analysis:
-        {json.dumps(analysis, indent=2)}
+        Target Company Analysis:
+        {json.dumps(company_analysis, indent=2)}
 
-        Service Description:
-        {service_description}
+        Our Business:
+        {json.dumps(user_business, indent=2)}
 
         Identify:
-        1. How the service addresses company's pain points
-        2. Potential benefits and ROI
-        3. Industry-specific applications
-        4. Competitive advantages
+        1. Specific needs the target company might have for our product/service
+        2. How our offering can improve their operations
+        3. Potential cost savings or benefits
+        4. Industry-specific use cases
+        5. Relevant pain points we can address
 
-        Return the analysis in JSON format.
+        Return the analysis as JSON with these exact keys:
+        {
+            "needs_identified": [],
+            "value_propositions": [],
+            "specific_benefits": [],
+            "industry_applications": []
+        }
         """
 
         response = self.client.chat.completions.create(
@@ -87,17 +115,20 @@ class EmailGenerator:
         return json.loads(response.choices[0].message.content)
 
     def _create_email_prompt(
-        self, 
-        analysis: Dict,
-        service_description: str,
-        service_analysis: Dict,
-        target_persona: str, 
-        tone: str
+        self,
+        company_analysis: Dict,
+        user_business: Dict,
+        opportunity: Dict,
+        tone: str,
+        target_persona: str
     ) -> str:
+        """Create prompt for email generation."""
+        
         email_template = {
             "subject_lines": [
                 "Subject line 1",
-                "Subject line 2"
+                "Subject line 2",
+                "Subject line 3"
             ],
             "emails": [
                 {
@@ -109,33 +140,42 @@ class EmailGenerator:
                     "subject": "Subject line 2",
                     "body": "Email body 2",
                     "call_to_action": "CTA 2"
+                },
+                {
+                    "subject": "Subject line 3",
+                    "body": "Email body 3",
+                    "call_to_action": "CTA 3"
                 }
             ]
         }
         
         return f"""
-        Generate two variations of a sales email based on this analysis.
+        Generate three variations of a sales email for {user_business['company_name']} 
+        targeting {company_analysis.get('company_name', 'the company')}.
         
-        Company Analysis:
-        {json.dumps(analysis, indent=2)}
+        Our Business:
+        Company: {user_business['company_name']}
+        Type: {user_business['business_type']}
+        Product/Service: {user_business['product_description']}
 
-        Our Service/Product:
-        {service_description}
+        Target Company Analysis:
+        {json.dumps(company_analysis, indent=2)}
 
-        Service Fit Analysis:
-        {json.dumps(service_analysis, indent=2)}
+        Business Opportunity Analysis:
+        {json.dumps(opportunity, indent=2)}
 
         Target persona: {target_persona}
         Tone: {tone}
 
         Guidelines:
-        1. Focus on how our service/product specifically solves their needs
-        2. Use industry-specific language and examples
-        3. Highlight relevant benefits and ROI
-        4. Keep emails concise (3-4 paragraphs)
-        5. Include clear value proposition
-        6. End with strong call-to-action
+        1. Start with a relevant observation about their business
+        2. Clearly explain how our {user_business['business_type']} can benefit them
+        3. Use specific examples from the opportunity analysis
+        4. Keep emails concise (2-4 paragraphs)
+        5. Include clear value propositions
+        6. End with a simple, actionable call-to-action
+        7. Maintain a {tone} tone throughout
 
-        Return the emails in this exact JSON format:
+        Return exactly 3 email variations in this JSON format:
         {json.dumps(email_template, indent=2)}
         """
