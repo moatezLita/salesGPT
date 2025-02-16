@@ -129,7 +129,10 @@ async def list_emails(analysis_id: str):
     try:
         emails = await db.get_emails(analysis_id)
         if not emails:
-            raise HTTPException(status_code=404, detail="Emails not found")
+            return {
+                "status": "success",
+                "emails": []
+            }
         return {
             "status": "success",
             "emails": emails

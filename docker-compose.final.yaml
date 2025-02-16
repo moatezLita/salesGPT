@@ -23,6 +23,28 @@ services:
       timeout: 10s
       retries: 3
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: salesgpt-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_BACKEND_API=http://backend:8000
+      # - NEXT_PUBLIC_SUPABASE_URL=https://rnlqhsbkugnamwlskgfl.supabase.co
+      # - NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+    networks:
+      - salesgpt-network
+    restart: unless-stopped
+
   mongodb:
     image: mongo:latest
     container_name: salesgpt-mongodb
