@@ -81,84 +81,85 @@ class EmailGenerator:
         
         return json.loads(response.choices[0].message.content)
 
-    def _generate_emails(
-        self,
-        company_analysis: Dict,
-        user_business: Dict,
-        opportunity: Dict,
-        tone: str,
-        target_persona: str
-    ) -> Dict:
-        """Generate personalized sales emails based on the opportunity analysis."""
-        
-        email_prompt = f"""
-        As an expert B2B sales copywriter, craft three unique email variations based on this analysis:
-        
-        TARGET COMPANY:
-        {json.dumps(company_analysis, indent=2)}
-        
-        OUR BUSINESS:
-        Company: {user_business['company_name']}
-        Type: {user_business['business_type']}
-        Offering: {user_business['product_description']}
-        
-        OPPORTUNITY ANALYSIS:
-        Pain Points: {json.dumps(opportunity['pain_points'], indent=2)}
-        Benefits: {json.dumps(opportunity['benefits'], indent=2)}
-        Value Metrics: {json.dumps(opportunity['value_metrics'], indent=2)}
-        Competitive Edges: {json.dumps(opportunity['competitive_edges'], indent=2)}
-        Use Cases: {json.dumps(opportunity['use_cases'], indent=2)}
-        
-        TARGET PERSONA: {target_persona}
-        TONE: {tone}
-        
-        EMAIL REQUIREMENTS:
-        1. Subject Line:
-           - Attention-grabbing but professional
-           - Mention specific value or pain point
-           - No clickbait or spam-like language
-        
-        2. Email Body:
-           - Open with a specific observation about their business
-           - Reference identified pain points
-           - Present clear value proposition
-           - Use industry-specific language
-           - Include relevant metrics/benefits
-           - 2-4 concise paragraphs
-           - No generic sales language
-        
-        3. Call to Action:
-           - Clear and specific
-           - Low-pressure but compelling
-           - Actionable next step
-        
-        Return three variations in this exact JSON format:
-        {{
-            "emails": [
-                {{
-                    "subject": "Compelling subject line",
-                    "body": "Professional email body\\n\\nWith clear value proposition",
-                    "call_to_action": "Clear call to action"
-                }},
-                {{
-                    "subject": "Different angle subject",
-                    "body": "Alternative approach\\n\\nFocusing on different benefits",
-                    "call_to_action": "Alternative call to action"
-                }},
-                {{
-                    "subject": "Third variation subject",
-                    "body": "Unique perspective\\n\\nWith different emphasis",
-                    "call_to_action": "Final call to action variation"
-                }}
-            ]
-        }}
-        """
-        
+def _generate_emails(
+    self,
+    company_analysis: Dict,
+    user_business: Dict,
+    opportunity: Dict,
+    tone: str,
+    target_persona: str
+) -> Dict:
+    email_prompt = f"""
+    As an expert B2B sales copywriter, craft three unique email variations based on this analysis:
+    
+    TARGET COMPANY:
+    {json.dumps(company_analysis, indent=2)}
+    
+    OUR BUSINESS:
+    Company: {user_business['company_name']}
+    Type: {user_business['business_type']}
+    Offering: {user_business['product_description']}
+    
+    OPPORTUNITY ANALYSIS:
+    Pain Points: {json.dumps(opportunity['pain_points'], indent=2)}
+    Benefits: {json.dumps(opportunity['benefits'], indent=2)}
+    Value Metrics: {json.dumps(opportunity['value_metrics'], indent=2)}
+    Competitive Edges: {json.dumps(opportunity['competitive_edges'], indent=2)}
+    Use Cases: {json.dumps(opportunity['use_cases'], indent=2)}
+    
+    TARGET PERSONA: {target_persona}
+    TONE: {tone}
+    
+    EMAIL REQUIREMENTS:
+    1. Subject Line:
+       - Attention-grabbing but professional
+       - Mention specific value or pain point
+       - No clickbait or spam-like language
+    
+    2. Email Body:
+       - Open with a specific observation about their business
+       - Reference identified pain points
+       - Present clear value proposition
+       - Use industry-specific language
+       - Include relevant metrics/benefits
+       - 2-4 concise paragraphs
+       - No generic sales language
+    
+    3. Call to Action:
+       - Clear and specific
+       - Low-pressure but compelling
+       - Actionable next step
+    
+    Format your response as a JSON with exactly this structure:
+    {
+        "emails": [
+            {
+                "subject": "First subject line",
+                "body": "First email body. New paragraphs should use double spaces for line breaks.",
+                "call_to_action": "First call to action"
+            },
+            {
+                "subject": "Second subject line",
+                "body": "Second email body. Using double spaces for line breaks.",
+                "call_to_action": "Second call to action"
+            },
+            {
+                "subject": "Third subject line",
+                "body": "Third email body. With double spaces for breaks.",
+                "call_to_action": "Third call to action"
+            }
+        ]
+    }
+    
+    Ensure the JSON is properly formatted with no invalid escape characters.
+    """
+    
+    try:
         response = self.client.chat.completions.create(
             model="mixtral-8x7b-32768",
             messages=[{
                 "role": "system",
-                "content": f"You are an expert B2B sales copywriter crafting personalized outreach in a {tone} tone."
+                "content": f"You are an expert B2B sales copywriter crafting personalized outreach in a {tone} tone. Always return properly formatted JSON."
             }, {
                 "role": "user",
                 "content": email_prompt
@@ -167,7 +168,21 @@ class EmailGenerator:
             max_tokens=1000
         )
         
-        return json.loads(response.choices[0].message.content)
+        # Add error handling for JSON parsing
+        try:
+            result = json.loads(response.choices[0].message.content)
+            return result
+        except json.JSONDecodeError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Invalid JSON in response: {str(e)}"
+            )
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Email generation failed: {str(e)}"
+        )
 
 # # backend/app/services/email_generator.py
 
