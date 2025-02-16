@@ -89,26 +89,26 @@ class EmailGenerator:
         tone: str,
         target_persona: str
     ) -> Dict:
-        email_prompt = f"""
+        email_prompt = """
         As an expert B2B sales copywriter, craft three unique email variations based on this analysis:
         
         TARGET COMPANY:
-        {json.dumps(company_analysis, indent=2)}
+        """ + json.dumps(company_analysis, indent=2) + """
         
         OUR BUSINESS:
-        Company: {user_business['company_name']}
-        Type: {user_business['business_type']}
-        Offering: {user_business['product_description']}
+        Company: """ + user_business['company_name'] + """
+        Type: """ + user_business['business_type'] + """
+        Offering: """ + user_business['product_description'] + """
         
         OPPORTUNITY ANALYSIS:
-        Pain Points: {json.dumps(opportunity['pain_points'], indent=2)}
-        Benefits: {json.dumps(opportunity['benefits'], indent=2)}
-        Value Metrics: {json.dumps(opportunity['value_metrics'], indent=2)}
-        Competitive Edges: {json.dumps(opportunity['competitive_edges'], indent=2)}
-        Use Cases: {json.dumps(opportunity['use_cases'], indent=2)}
+        Pain Points: """ + json.dumps(opportunity['pain_points'], indent=2) + """
+        Benefits: """ + json.dumps(opportunity['benefits'], indent=2) + """
+        Value Metrics: """ + json.dumps(opportunity['value_metrics'], indent=2) + """
+        Competitive Edges: """ + json.dumps(opportunity['competitive_edges'], indent=2) + """
+        Use Cases: """ + json.dumps(opportunity['use_cases'], indent=2) + """
         
-        TARGET PERSONA: {target_persona}
-        TONE: {tone}
+        TARGET PERSONA: """ + target_persona + """
+        TONE: """ + tone + """
         
         EMAIL REQUIREMENTS:
         1. Subject Line:
@@ -130,49 +130,55 @@ class EmailGenerator:
         - Low-pressure but compelling
         - Actionable next step
         
-        Format your response as a JSON with exactly this structure:
+        Return a JSON response in this exact format (do not include any other text, just the JSON):
         {
-            "emails": [
-                {
-                    "subject": "First subject line",
-                    "body": "First email body. New paragraphs should use double spaces for line breaks.",
-                    "call_to_action": "First call to action"
-                },
-                {
-                    "subject": "Second subject line",
-                    "body": "Second email body. Using double spaces for line breaks.",
-                    "call_to_action": "Second call to action"
-                },
-                {
-                    "subject": "Third subject line",
-                    "body": "Third email body. With double spaces for breaks.",
-                    "call_to_action": "Third call to action"
-                }
-            ]
+        "emails": [
+            {
+            "subject": "First subject line",
+            "body": "First email body. New paragraphs should use double spaces for line breaks.",
+            "call_to_action": "First call to action"
+            },
+            {
+            "subject": "Second subject line",
+            "body": "Second email body. Using double spaces for line breaks.",
+            "call_to_action": "Second call to action"
+            },
+            {
+            "subject": "Third subject line",
+            "body": "Third email body. With double spaces for breaks.",
+            "call_to_action": "Third call to action"
+            }
+        ]
         }
-        
-        Ensure the JSON is properly formatted with no invalid escape characters.
         """
         
         try:
             response = self.client.chat.completions.create(
                 model="mixtral-8x7b-32768",
-                messages=[{
-                    "role": "system",
-                    "content": f"You are an expert B2B sales copywriter crafting personalized outreach in a {tone} tone. Always return properly formatted JSON."
-                }, {
-                    "role": "user",
-                    "content": email_prompt
-                }],
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert B2B sales copywriter crafting personalized outreach in a " + tone + " tone. Return only valid JSON in the specified format."
+                    },
+                    {
+                        "role": "user",
+                        "content": email_prompt
+                    }
+                ],
                 temperature=0.7,
                 max_tokens=1000
             )
             
             # Add error handling for JSON parsing
             try:
-                result = json.loads(response.choices[0].message.content)
+                content = response.choices[0].message.content.strip()
+                # Try to find JSON content if there's any extra text
+                if content.find('{') != -1:
+                    content = content[content.find('{'):content.rfind('}')+1]
+                result = json.loads(content)
                 return result
             except json.JSONDecodeError as e:
+                print("Failed to parse JSON:", content)  # Debug print
                 raise HTTPException(
                     status_code=500,
                     detail=f"Invalid JSON in response: {str(e)}"
