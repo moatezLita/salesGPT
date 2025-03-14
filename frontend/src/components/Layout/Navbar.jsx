@@ -5,11 +5,25 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import UserMenu from '../auth/UserMenu';
 
 export function Navbar() {
   const pathname = usePathname();
+  const { user, loading } = useAuth();
   
   const isActive = (path) => pathname === path;
+
+  const navItems = user ? [
+    { name: 'Dashboard', path: '/dashboard' },
+    { name: 'Analyze', path: '/analyze' },
+    { name: 'Emails', path: '/emails' }
+  ] : [
+    { name: 'Home', path: '/' },
+    { name: 'Analyze', path: '/analyze' },
+    { name: 'Features', path: '/features' },
+    { name: 'Pricing', path: '/pricing' }
+  ];
 
   return (
     <motion.div
@@ -29,11 +43,7 @@ export function Navbar() {
           </div>
 
           <nav className="hidden md:flex items-center space-x-8">
-            {[
-              { name: 'Home', path: '/' },
-              { name: 'Analyze', path: '/analyze' },
-              { name: 'Emails', path: '/emails' }
-            ].map(({ name, path }) => (
+            {navItems.map(({ name, path }) => (
               <Link
                 key={path}
                 href={path}
@@ -55,17 +65,29 @@ export function Navbar() {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              className="hidden md:inline-flex hover:bg-blue-50 text-blue-600"
-            >
-              Sign In
-            </Button>
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Get Started
-            </Button>
+            {loading ? (
+              <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
+            ) : user ? (
+              <UserMenu />
+            ) : (
+              <>
+                <Link href="/auth?type=login">
+                  <Button 
+                    variant="ghost" 
+                    className="hidden md:inline-flex hover:bg-blue-50 text-blue-600"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/auth?type=register">
+                  <Button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

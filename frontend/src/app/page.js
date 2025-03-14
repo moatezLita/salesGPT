@@ -1,6 +1,6 @@
 import { Features } from "@/components/home/Features";
 import { Hero } from "@/components/home/Hero";
-import { Footer } from "@/components/Layout/Footer";
+import { Footer } from "@/components/layout/Footer";
 
 export default function Home() {
   return (
