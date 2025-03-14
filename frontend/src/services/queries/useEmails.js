@@ -4,8 +4,20 @@ import { emailEndpoints } from '../endpoints/emailEndpoints';
 
 export const useGenerateEmail = () => {
   return useMutation({
-    mutationFn: ({ analysisId, targetPersona, tone }) => 
-      emailEndpoints.generateEmail(analysisId, { targetPersona, tone }),
+    mutationFn: ({ 
+      analysisId, 
+      targetPersona, 
+      tone, 
+      companyName,
+      businessType,
+      serviceDescription 
+    }) => emailEndpoints.generateEmail(analysisId, { 
+      targetPersona, 
+      tone,
+      companyName,
+      businessType,
+      serviceDescription
+    }),
     onError: (error) => {
       console.error('Error generating email:', error);
     }
@@ -15,9 +27,9 @@ export const useGenerateEmail = () => {
 export const useEmailResults = (analysisId) => {
   return useQuery({
     queryKey: ['emails', analysisId],
-    queryFn: () => emailEndpoints.getEmail(analysisId),
+    queryFn: () => emailEndpoints.getEmails(analysisId),
     enabled: !!analysisId,
     refetchOnWindowFocus: false,
-    select: (data) => data.emails || []
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
